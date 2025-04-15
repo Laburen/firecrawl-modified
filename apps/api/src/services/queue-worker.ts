@@ -95,9 +95,9 @@ const jobLockExtensionTime =
 const cantAcceptConnectionInterval =
   Number(process.env.CANT_ACCEPT_CONNECTION_INTERVAL) || 6000;
 const connectionMonitorInterval =
-  Number(process.env.CONNECTION_MONITOR_INTERVAL) || 100;
+  Number(process.env.CONNECTION_MONITOR_INTERVAL) || 1000;
 
-const gotJobInterval = Number(process.env.CONNECTION_MONITOR_INTERVAL) || 100;
+const gotJobInterval = Number(process.env.CONNECTION_MONITOR_INTERVAL) || 1000;
 console.log("[CONNECTION_MONITOR_INTERVAL]",gotJobInterval);
 
 console.log("[CANT_ACCEPT_CONNECTION_INTERVAL]",cantAcceptConnectionInterval);

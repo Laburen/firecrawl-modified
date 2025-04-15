@@ -93,10 +93,10 @@ const jobLockExtensionTime =
   Number(process.env.JOB_LOCK_EXTENSION_TIME) || 60000;
 
 const cantAcceptConnectionInterval =
-  Number(process.env.CANT_ACCEPT_CONNECTION_INTERVAL) || 2000;
+  Number(process.env.CANT_ACCEPT_CONNECTION_INTERVAL) || 8000;
 const connectionMonitorInterval =
-  Number(process.env.CONNECTION_MONITOR_INTERVAL) || 10;
-const gotJobInterval = Number(process.env.CONNECTION_MONITOR_INTERVAL) || 20;
+  Number(process.env.CONNECTION_MONITOR_INTERVAL) || 1000;
+const gotJobInterval = Number(process.env.CONNECTION_MONITOR_INTERVAL) || 1000;
 
 const runningJobs: Set<string> = new Set();
 
@@ -654,8 +654,8 @@ const workerFun = async (
     const token = uuidv4();
     const canAcceptConnection = await monitor.acceptConnection();
     if (!canAcceptConnection) {
-      console.log("Can't accept connection due to RAM/CPU load");
-      logger.info("Can't accept connection due to RAM/CPU load");
+      console.log(`Can't accept connection due to RAM/CPU load (${cantAcceptConnectionInterval})`);
+      logger.info(`Can't accept connection due to RAM/CPU load (${cantAcceptConnectionInterval})`);
       cantAcceptConnectionCount++;
 
       if (cantAcceptConnectionCount >= 25) {

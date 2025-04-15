@@ -72,14 +72,14 @@ async function addScrapeJobRaw(
 ) {
   let concurrencyLimited = false;
   let currentActiveConcurrency = 0;
-  let maxConcurrency = 0;
+  let maxConcurrency = Number(process.env.MAX_CONCURRENT_JOBS) || 1;
 
   if (
     webScraperOptions &&
     webScraperOptions.team_id
   ) {
     const now = Date.now();
-    maxConcurrency = getConcurrencyLimitMax(webScraperOptions.plan ?? "free", webScraperOptions.team_id);
+    // maxConcurrency = getConcurrencyLimitMax(webScraperOptions.plan ?? "free", webScraperOptions.team_id);
     cleanOldConcurrencyLimitEntries(webScraperOptions.team_id, now);
     currentActiveConcurrency = (await getConcurrencyLimitActiveJobs(webScraperOptions.team_id, now)).length;
     concurrencyLimited = currentActiveConcurrency >= maxConcurrency;
@@ -168,11 +168,11 @@ export async function addScrapeJobs(
 
   let countCanBeDirectlyAdded = Infinity;
   let currentActiveConcurrency = 0;
-  let maxConcurrency = 0;
+  let maxConcurrency = Number(process.env.MAX_CONCURRENT_JOBS) || 1;
 
   if (jobs[0].data && jobs[0].data.team_id && jobs[0].data.plan) {
     const now = Date.now();
-    maxConcurrency = getConcurrencyLimitMax(jobs[0].data.plan as PlanType, jobs[0].data.team_id);
+    // maxConcurrency = getConcurrencyLimitMax(jobs[0].data.plan as PlanType, jobs[0].data.team_id);
     cleanOldConcurrencyLimitEntries(jobs[0].data.team_id, now);
 
     currentActiveConcurrency = (await getConcurrencyLimitActiveJobs(jobs[0].data.team_id, now)).length;

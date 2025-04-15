@@ -87,7 +87,10 @@ async function addScrapeJobRaw(
   }
 
   const concurrencyQueueJobs = await getConcurrencyQueueJobsCount(webScraperOptions.team_id);
-
+  console.log("[CONCURRENCY_QUEUE_JOBS]", concurrencyQueueJobs);
+  console.log("[CURRENT_ACTIVE_CONCURRENCY]", currentActiveConcurrency);
+  
+  
   if (concurrencyLimited) {
     // Detect if they hit their concurrent limit
     // If above by 2x, send them an email
@@ -104,7 +107,7 @@ async function addScrapeJobRaw(
         }
     }
     
-    webScraperOptions.concurrencyLimited = true;
+    // webScraperOptions.concurrencyLimited = true;
 
     await _addScrapeJobToConcurrencyQueue(
       webScraperOptions,

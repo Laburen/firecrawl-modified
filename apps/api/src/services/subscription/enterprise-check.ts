@@ -35,5 +35,5 @@ export async function isEnterpriseTeamCreatedAfterRateLimitChange(
     (sub) => sub.prices?.products?.is_enterprise === true,
   );
 
-  return !!isEnterprise;
+  return false
 }

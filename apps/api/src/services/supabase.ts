@@ -20,21 +20,7 @@ class SupabaseService {
         "Authentication is disabled. Supabase client will not be initialized.",
       );
       this.client = null;
-    } else if (!supabaseUrl || !supabaseServiceToken || !supabaseReplicaUrl) {
-      logger.error(
-        "Supabase environment variables aren't configured correctly. Supabase client will not be initialized. Fix ENV configuration or disable DB authentication with USE_DB_AUTHENTICATION env variable",
-      );
-    } else {
-      this.client = createClient(supabaseUrl, supabaseServiceToken, {
-        global: {
-          headers: {
-            "sb-lb-routing-mode": "alpha-all-services",
-          },
-        },
-      });
-
-      this.rrClient = createClient(supabaseReplicaUrl, supabaseServiceToken);
-    }
+    } 
   }
 
   // Provides access to the initialized Supabase client, if available.

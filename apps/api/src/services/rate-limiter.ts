@@ -26,7 +26,7 @@ export const CONCURRENCY_LIMIT: Omit<Record<PlanType, number>, ""> = {
   extract_pro: 200
 };
 
-xport const RATE_LIMITS = {
+export const RATE_LIMITS = {
   crawl: {
     default: 100000000,
     free: 100000000,

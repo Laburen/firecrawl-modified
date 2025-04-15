@@ -72,7 +72,7 @@ async function addScrapeJobRaw(
 ) {
   let concurrencyLimited = false;
   let currentActiveConcurrency = 0;
-  let maxConcurrency = Number(process.env.MAX_CONCURRENT_JOBS) || 1;
+  let maxConcurrency = Number(process.env.MAX_CONCURRENT_JOBS) || 4;
 
   if (
     webScraperOptions &&

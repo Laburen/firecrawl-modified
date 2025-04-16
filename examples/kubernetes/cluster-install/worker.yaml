@@ -21,7 +21,7 @@ spec:
           args: [ "pnpm", "run", "workers" ]
           env:
             - name: FLY_PROCESS_GROUP
-              value: "worker"
+              value: "app"
           envFrom:
             - configMapRef:
                 name: firecrawl-config

@@ -228,6 +228,8 @@ export async function countCreditsAndRemainingForCurrentBillingPeriod(
     );
 
     const remainingCredits = FREE_CREDITS + couponCredits - totalCreditsUsed;
+    console.log("[REMAINING CREDITS]", remainingCredits);
+    
     return {
       totalCreditsUsed: totalCreditsUsed,
       remainingCredits,

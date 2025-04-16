@@ -24,10 +24,9 @@ const jobLockExtensionTime =
   Number(process.env.JOB_LOCK_EXTENSION_TIME) || 60000;
 
 const cantAcceptConnectionInterval =
-  Number(process.env.CANT_ACCEPT_CONNECTION_INTERVAL) || 2000;
-const connectionMonitorInterval =
-  Number(process.env.CONNECTION_MONITOR_INTERVAL) || 10;
-const gotJobInterval = Number(process.env.CONNECTION_MONITOR_INTERVAL) || 20;
+  Number(process.env.CANT_ACCEPT_CONNECTION_INTERVAL) || 6000;
+const connectionMonitorInterval =1200;
+const gotJobInterval = 1200;
 
 const runningJobs: Set<string> = new Set();
 

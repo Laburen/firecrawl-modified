@@ -21,7 +21,15 @@ export async function scrapeController(
 ) {
   const jobId = uuidv4();
   const preNormalizedBody = { ...req.body };
- 
+
+  console.log("🔵 [SCRAPE INIT]", JSON.stringify({
+    scrapeId: jobId,
+    request: req.body,
+    originalRequest: preNormalizedBody,
+    teamId: req.auth.team_id,
+    account: req.account,
+  }));
+
   logger.debug("Scrape " + jobId + " starting", {
     scrapeId: jobId,
     request: req.body,
@@ -30,19 +38,32 @@ export async function scrapeController(
     account: req.account,
   });
 
-  req.body = scrapeRequestSchema.parse(req.body);
+  try {
+    req.body = scrapeRequestSchema.parse(req.body);
+  } catch (error) {
+    console.error("❌ [SCHEMA ERROR]", error);
+    return res.status(400).json({
+      success: false,
+      error: "Invalid request format",
+    });
+  }
+
   let earlyReturn = false;
 
   const origin = req.body.origin;
   const timeout = req.body.timeout;
-
   const startTime = new Date().getTime();
+
+  console.log("🕒 [TIMEOUT]", timeout);
+  console.log("🟢 [AUTH INFO]", JSON.stringify(req.auth));
+
   const jobPriority = await getJobPriority({
     plan: req.auth.plan as PlanType,
     team_id: req.auth.team_id,
     basePriority: 10,
   });
-  // 
+
+  console.log("⚙️ [JOB PRIORITY]", jobPriority);
 
   await addScrapeJob(
     {
@@ -60,6 +81,8 @@ export async function scrapeController(
     jobPriority,
   );
 
+  console.log("📤 [JOB ADDED TO QUEUE]", jobId);
+
   const totalWait =
     (req.body.waitFor ?? 0) +
     (req.body.actions ?? []).reduce(
@@ -67,15 +90,22 @@ export async function scrapeController(
       0,
     );
 
+  console.log("⏱️ [TOTAL WAIT TIME]", totalWait);
+
   let doc: Document;
+
   try {
-    doc = await waitForJob<Document>(jobId, timeout + totalWait); // TODO: better types for this
+    console.log("⏳ [WAITING FOR JOB]", jobId, `Timeout: ${timeout + totalWait}ms`);
+    doc = await waitForJob<Document>(jobId, timeout + totalWait);
+    console.log("✅ [JOB COMPLETED]", jobId);
   } catch (e) {
     logger.error(`Error in scrapeController: ${e}`, {
       jobId,
       scrapeId: jobId,
       startTime,
     });
+    console.error("❌ [WAIT ERROR]", e);
+
     if (
       e instanceof Error &&
       (e.message.startsWith("Job wait") || e.message === "timeout")
@@ -93,35 +123,41 @@ export async function scrapeController(
   }
 
   await getScrapeQueue().remove(jobId);
+  console.log("🗑️ [JOB REMOVED FROM QUEUE]", jobId);
 
   const endTime = new Date().getTime();
   const timeTakenInSeconds = (endTime - startTime) / 1000;
+
+  console.log("⏱️ [TIME TAKEN]", timeTakenInSeconds, "seconds");
+
   const numTokens =
     doc && doc.extract
-      ? // ? numTokensFromString(doc.markdown, "gpt-3.5-turbo")
-        0 // TODO: fix
+      ? 0 // TODO: calculate actual tokens
       : 0;
 
-  let creditsToBeBilled = 1; // Assuming 1 credit per document
+  let creditsToBeBilled = 1;
   if (earlyReturn) {
-    // Don't bill if we're early returning
+    console.log("↩️ [EARLY RETURN] Skipping billing and response");
     return;
   }
   if (req.body.extract && req.body.formats.includes("extract")) {
     creditsToBeBilled = 5;
   }
 
+  console.log("💳 [BILLING CREDITS]", creditsToBeBilled);
+
   billTeam(req.auth.team_id, req.acuc?.sub_id, creditsToBeBilled).catch(
     (error) => {
+      console.error("❌ [BILLING ERROR]", error);
       logger.error(
         `Failed to bill team ${req.auth.team_id} for ${creditsToBeBilled} credits: ${error}`,
       );
-      // Optionally, you could notify an admin or add to a retry queue here
     },
   );
 
   if (!req.body.formats.includes("rawHtml")) {
     if (doc && doc.rawHtml) {
+      console.log("🚫 [REMOVING RAW HTML]");
       delete doc.rawHtml;
     }
   }
@@ -139,6 +175,11 @@ export async function scrapeController(
     scrapeOptions: req.body,
     origin: origin,
     num_tokens: numTokens,
+  });
+
+  console.log("📦 [RETURNING RESPONSE]", {
+    success: true,
+    scrape_id: origin?.includes("website") ? jobId : undefined,
   });
 
   return res.status(200).json({

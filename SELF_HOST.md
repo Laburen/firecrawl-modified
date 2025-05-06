@@ -79,9 +79,9 @@ USE_DB_AUTHENTICATION=false
 ## === Other ===
 
 # Supabase Setup (used to support DB authentication, advanced logging, etc.)
-# SUPABASE_ANON_TOKEN=
-# SUPABASE_URL=
-# SUPABASE_SERVICE_TOKEN=
+# SUPABASE_ANON_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjbHhqcW9hamRraWl4b3dycWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MjkwMzEsImV4cCI6MjA2MDQwNTAzMX0.mayGWQ6SodRYhYEN2AvrEvdFo58f_eu5HuOwNym80Po
+# SUPABASE_URL=https://qclxjqoajdkiixowrqdv.supabase.co
+# SUPABASE_SERVICE_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjbHhqcW9hamRraWl4b3dycWR2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDgyOTAzMSwiZXhwIjoyMDYwNDA1MDMxfQ.-dRHQy-57CNjUJbWNUqITziofCZDJu6u3NsOqAMqA5c
 
 # Use if you've set up authentication and want to test with a real API key
 # TEST_API_KEY=

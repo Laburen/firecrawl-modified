@@ -13,6 +13,7 @@ const RATE_LIMIT_CHANGE_NOTIFICATION_START_DATE = new Date("2025-03-12");
 export async function isEnterpriseTeamCreatedAfterRateLimitChange(
   team_id: string,
 ): Promise<boolean> {
+   return false
   const { data, error } = (await supabase_service
     .from("subscriptions")
     .select("prices(products(is_enterprise))")

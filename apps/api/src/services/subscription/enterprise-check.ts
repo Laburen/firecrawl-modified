@@ -32,9 +32,9 @@ export async function isEnterpriseTeamCreatedAfterRateLimitChange(
     return false;
   }
 
-  const isEnterprise = data.find(
-    (sub) => sub.prices?.products?.is_enterprise === true,
-  );
+  // const isEnterprise = data.find(
+  //   (sub) => sub.prices?.products?.is_enterprise === true,
+  // );
 
   return false
 }

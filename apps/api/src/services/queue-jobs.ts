@@ -1,5 +1,7 @@
-import { getScrapeQueue } from "./queue-service";
+import { getScrapeQueue ,redisConnection} from "./queue-service";
 import { v4 as uuidv4 } from "uuid";
+import { QueueEvents } from 'bullmq';
+
 import { NotificationType, PlanType, WebScraperOptions } from "../types";
 import * as Sentry from "@sentry/node";
 import {
@@ -273,51 +275,75 @@ export async function addScrapeJobs(
   );
 }
 
+// export function waitForJob<T = unknown>(
+//   jobId: string,
+//   timeout: number,
+// ): Promise<T> {
+//   return new Promise((resolve, reject) => {
+//     const start = Date.now();
+//     const int = setInterval(async () => {
+//       if (Date.now() >= start + timeout) {
+//         clearInterval(int);
+//         reject(new Error("Job wait "));
+//       } else {
+//         const state = await getScrapeQueue().getJobState(jobId);
+//         if (state === "completed") {
+//           clearInterval(int);
+//           resolve((await getScrapeQueue().getJob(jobId))!.returnvalue);
+//         } else if (state === "failed") {
+//           // console.log("failed", (await getScrapeQueue().getJob(jobId)).failedReason);
+//           const job = await getScrapeQueue().getJob(jobId);
+//           if (job && job.failedReason !== "Concurrency limit hit") {
+//             clearInterval(int);
+//             reject(job.failedReason);
+//           }
+//         }
+//       }
+//     }, 250);
+//   });
+// }
 export function waitForJob<T = unknown>(
   jobId: string,
   timeout: number,
 ): Promise<T> {
+  // Nombre de la cola de scrape
+  const queueName = getScrapeQueue().name;
+  // Instanciamos QueueEvents para suscribirnos a completions/failures
+  const events = new QueueEvents(queueName, { connection: redisConnection });
+
   return new Promise((resolve, reject) => {
-    const start = Date.now();
-    const checkInterval = 250; // ms entre verificaciones
-    let attempts = 0;
-    
-    const int = setInterval(async () => {
-      attempts++;
-      
-      // Añadir logging para depuración
-      if (attempts % 10 === 0) { // Log cada 2.5 segundos
-        logger.debug(`Esperando job ${jobId}: ${Math.round((Date.now() - start)/1000)}s de ${Math.round(timeout/1000)}s`);
+    // Handler para job completado
+    const onComplete = async ({ jobId: finished }: { jobId: string }) => {
+      if (finished === jobId) {
+        cleanup();
+        // Traemos el job para leer su returnvalue
+        const job = await getScrapeQueue().getJob(jobId);
+        resolve((job?.returnvalue ?? null) as T);
       }
-      
-      try {
-        if (Date.now() >= start + timeout) {
-          clearInterval(int);
-          logger.warn(`Timeout esperando job ${jobId} después de ${Math.round(timeout/1000)}s`);
-          reject(new Error(`Timeout esperando job ${jobId}`));
-        } else {
-          const state = await getScrapeQueue().getJobState(jobId);
-          
-          if (state === "completed") {
-            clearInterval(int);
-            const job = await getScrapeQueue().getJob(jobId);
-            if (!job) {
-              reject(new Error(`Job ${jobId} completado pero no encontrado`));
-            } else {
-              resolve(job.returnvalue);
-            }
-          } else if (state === "failed") {
-            const job = await getScrapeQueue().getJob(jobId);
-            if (job && job.failedReason !== "Concurrency limit hit") {
-              clearInterval(int);
-              reject(new Error(`Job ${jobId} falló: ${job.failedReason}`));
-            }
-          }
-        }
-      } catch (error) {
-        logger.error(`Error verificando estado de job ${jobId}: ${error.message}`);
-        // No rechazar la promesa por errores de verificación
+    };
+
+    // Handler para job fallido
+    const onFailed = ({ jobId: failed, failedReason }: { jobId: string; failedReason: any }) => {
+      if (failed === jobId) {
+        cleanup();
+        reject(new Error(failedReason));
       }
-    }, checkInterval);
+    };
+
+    // Timeout por si nunca llega ni completion ni failure
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('timeout'));
+    }, timeout);
+
+    function cleanup() {
+      clearTimeout(timer);
+      events.removeListener('completed', onComplete);
+      events.removeListener('failed', onFailed);
+    }
+
+    // Nos suscribimos
+    events.on('completed', onComplete);
+    events.on('failed', onFailed);
   });
 }

@@ -279,24 +279,45 @@ export function waitForJob<T = unknown>(
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     const start = Date.now();
+    const checkInterval = 250; // ms entre verificaciones
+    let attempts = 0;
+    
     const int = setInterval(async () => {
-      if (Date.now() >= start + timeout) {
-        clearInterval(int);
-        reject(new Error("Job wait "));
-      } else {
-        const state = await getScrapeQueue().getJobState(jobId);
-        if (state === "completed") {
+      attempts++;
+      
+      // Añadir logging para depuración
+      if (attempts % 10 === 0) { // Log cada 2.5 segundos
+        logger.debug(`Esperando job ${jobId}: ${Math.round((Date.now() - start)/1000)}s de ${Math.round(timeout/1000)}s`);
+      }
+      
+      try {
+        if (Date.now() >= start + timeout) {
           clearInterval(int);
-          resolve((await getScrapeQueue().getJob(jobId))!.returnvalue);
-        } else if (state === "failed") {
-          // console.log("failed", (await getScrapeQueue().getJob(jobId)).failedReason);
-          const job = await getScrapeQueue().getJob(jobId);
-          if (job && job.failedReason !== "Concurrency limit hit") {
+          logger.warn(`Timeout esperando job ${jobId} después de ${Math.round(timeout/1000)}s`);
+          reject(new Error(`Timeout esperando job ${jobId}`));
+        } else {
+          const state = await getScrapeQueue().getJobState(jobId);
+          
+          if (state === "completed") {
             clearInterval(int);
-            reject(job.failedReason);
+            const job = await getScrapeQueue().getJob(jobId);
+            if (!job) {
+              reject(new Error(`Job ${jobId} completado pero no encontrado`));
+            } else {
+              resolve(job.returnvalue);
+            }
+          } else if (state === "failed") {
+            const job = await getScrapeQueue().getJob(jobId);
+            if (job && job.failedReason !== "Concurrency limit hit") {
+              clearInterval(int);
+              reject(new Error(`Job ${jobId} falló: ${job.failedReason}`));
+            }
           }
         }
+      } catch (error) {
+        logger.error(`Error verificando estado de job ${jobId}: ${error.message}`);
+        // No rechazar la promesa por errores de verificación
       }
-    }, 250);
+    }, checkInterval);
   });
 }

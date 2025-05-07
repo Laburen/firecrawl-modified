@@ -25,8 +25,7 @@ import { ErrorResponse, ResponseWithSentry } from "./controllers/v1/types";
 import { ZodError } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { RateLimiterMode } from "./types";
-import { redisConnection } from "./services/queue-service";
-import { processConcurrencyQueue } from "./services/concurrency-processor";
+
 const { createBullBoard } = require("@bull-board/api");
 const { BullAdapter } = require("@bull-board/api/bullAdapter");
 const { ExpressAdapter } = require("@bull-board/express");
@@ -258,24 +257,6 @@ app.use(
 );
 
 logger.info(`Worker ${process.pid} started`);
-// ———————— DRENAR LA COLA LIMITADA CADA SEGUNDO ————————
-const MAX_CONCURRENT = Number(process.env.MAX_CONCURRENT_JOBS) || 2;
-
-// cada 1s revisa qué equipos (team_id) están en uso y drena su cola limitada
-setInterval(async () => {
-  try {
-    // lee todos los team_id que hayas ido guardando en Redis
-    const teamIds: string[] = await redisConnection.smembers("teams_using_v0");
-    for (const teamId of teamIds) {
-      // envía los jobs de la cola limitada a la cola principal, respetando maxConcurrency
-      await processConcurrencyQueue(teamId, MAX_CONCURRENT);
-    }
-  } catch (err) {
-    // por si algo falla en este loop, para no tumbar el servidor
-    console.error("Error al drenar la cola limitada:", err);
-  }
-}, 1000);
-
 // const sq = getScrapeQueue();
 
 // sq.on("waiting", j => ScrapeEvents.logJobEvent(j, "waiting"));

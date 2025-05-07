@@ -1,4 +1,4 @@
-import { getScrapeQueue } from "./queue-service";
+import { getScrapeQueue,scrapeQueueEvents } from "./queue-service";
 import { v4 as uuidv4 } from "uuid";
 import { NotificationType, PlanType, WebScraperOptions } from "../types";
 import * as Sentry from "@sentry/node";
@@ -277,25 +277,35 @@ export function waitForJob<T = unknown>(
   timeout: number,
 ): Promise<T> {
   return new Promise((resolve, reject) => {
-    const start = Date.now();
-    const int = setInterval(async () => {
-      if (Date.now() >= start + timeout) {
-        clearInterval(int);
-        reject(new Error("Job wait "));
-      } else {
-        const state = await getScrapeQueue().getJobState(jobId);
-        if (state === "completed") {
-          clearInterval(int);
-          resolve((await getScrapeQueue().getJob(jobId))!.returnvalue);
-        } else if (state === "failed") {
-          // console.log("failed", (await getScrapeQueue().getJob(jobId)).failedReason);
-          const job = await getScrapeQueue().getJob(jobId);
-          if (job && job.failedReason !== "Concurrency limit hit") {
-            clearInterval(int);
-            reject(job.failedReason);
-          }
+
+
+    const onCompleted = async (event: { jobId: string }) => {
+      if (event.jobId === jobId) {
+        clearTimeout(timer);
+        scrapeQueueEvents.removeListener('completed', onCompleted);
+        scrapeQueueEvents.removeListener('failed', onFailed);
+        const job = await getScrapeQueue().getJob(jobId);
+        resolve(job!.returnvalue as T);
+      }
+    };
+
+    const onFailed = async (event: { jobId: string }) => {
+      if (event.jobId === jobId) {
+        clearTimeout(timer);
+        scrapeQueueEvents.removeListener('completed', onCompleted);
+        scrapeQueueEvents.removeListener('failed', onFailed);
+        const job = await getScrapeQueue().getJob(jobId);
+        if (job && job.failedReason !== 'Concurrency limit hit') {
+          reject(job.failedReason);
         }
       }
-    }, 250);
+    };
+    const timer = setTimeout(() => {
+      scrapeQueueEvents.removeListener('completed', onCompleted);
+      scrapeQueueEvents.removeListener('failed', onFailed);
+      reject(new Error('Job wait timeout'));
+    }, timeout);
+    scrapeQueueEvents.once('completed', onCompleted);
+    scrapeQueueEvents.once('failed', onFailed);
   });
 }

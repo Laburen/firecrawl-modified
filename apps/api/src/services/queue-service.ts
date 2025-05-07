@@ -1,4 +1,4 @@
-import { Queue } from "bullmq";
+import { Queue ,QueueEvents} from "bullmq";
 import { logger } from "../lib/logger";
 import IORedis from "ioredis";
 
@@ -23,6 +23,11 @@ export const indexQueueName = "{indexQueue}";
 export const generateLlmsTxtQueueName = "{generateLlmsTxtQueue}";
 export const deepResearchQueueName = "{deepResearchQueue}";
 export const billingQueueName = "{billingQueue}";
+
+
+export const scrapeQueueEvents = new QueueEvents(scrapeQueueName, {
+  connection: redisConnection.duplicate(),
+});
 
 export function getScrapeQueue() {
   if (!scrapeQueue) {

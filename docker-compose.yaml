@@ -92,11 +92,25 @@ services:
     # Using Valkey with Firecrawl is untested and not guaranteed to work. Use with caution.
     image: redis:alpine
     # image: valkey/valkey:alpine
-    volumes:
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command:
+      - redis-server
+      - "--bind"
+      - "0.0.0.0"
+      - "--timeout"
+      - "120"
+      - "--tcp-keepalive"
+      - "60"
+      - "--maxmemory"
+      - "700mb"
+      - "--maxmemory-policy"
+      - "volatile-lru"
+      - "--appendonly"
+      - "yes"
+      - "--appendfsync"
+      - "everysec"
     networks:
       - backend
-    command: ["redis-server", "--bind", "0.0.0.0", "/usr/local/etc/redis/redis.conf"]
+    
 
 networks:
   backend:

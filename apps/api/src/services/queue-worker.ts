@@ -353,6 +353,7 @@ const processJobInternal = async (token: string, job: Job & { id: string }) => {
     await deleteJobPriority(job.data.team_id, job.id);
     clearInterval(extendLockInterval);
     console.log(`<< Exiting processJobInternal for job: ${job.id}`);
+    await removeConcurrencyLimitActiveJob(job.data.team_id, job.id);
   }
   return err;
 };

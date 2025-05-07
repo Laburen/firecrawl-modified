@@ -13,6 +13,7 @@ import { logger } from "../lib/logger";
 import { getConcurrencyLimitMax } from "./rate-limiter";
 import { sendNotificationWithCustomDays } from './notification/email_notification';
 import { shouldSendConcurrencyLimitNotification } from './notification/notification-check';
+import { processConcurrencyQueue } from "./concurrency-processor";
 
 /**
  * Checks if a job is a crawl or batch scrape based on its options
@@ -70,9 +71,12 @@ async function addScrapeJobRaw(
   jobId: string,
   jobPriority: number,
 ) {
+  let maxConcurrency = Number(process.env.MAX_CONCURRENT_JOBS) || 2;
+  if (webScraperOptions?.team_id) {
+    await processConcurrencyQueue(webScraperOptions.team_id, maxConcurrency);
+  }
   let concurrencyLimited = false;
   let currentActiveConcurrency = 0;
-  let maxConcurrency = Number(process.env.MAX_CONCURRENT_JOBS) || 2;
   console.log("[MAX_CONCURRENT_JOBS]", maxConcurrency);
   
   if (

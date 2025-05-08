@@ -149,9 +149,18 @@ const scrapePage = async (
 };
 
 // ✅ Healthcheck endpoint
-app.get('/', (_req: Request, res: Response) => {
-  res.status(200).send('OK');
+app.get('/healthcheck', async (_:Request, res:Response) => {
+  try {
+    const testPage = await context.newPage();
+    await testPage.goto('https://www.firecrawl.dev/', { timeout: 5000 });
+    await testPage.close();
+    res.sendStatus(200);
+  } catch (e) {
+    console.error('❌ Healthcheck failed:', e);
+    res.sendStatus(500);
+  }
 });
+
 
 app.post('/scrape', async (req: Request, res: Response) => {
   const { url, wait_after_load = 0, timeout = 15000, headers, check_selector }: UrlModel = req.body;

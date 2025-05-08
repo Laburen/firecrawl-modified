@@ -102,8 +102,6 @@ services:
       - "60"
       - "--maxmemory"
       - "700mb"
-      - "--maxmemory-policy"
-      - "volatile-lru"
       - "--appendonly"
       - "yes"
       - "--appendfsync"

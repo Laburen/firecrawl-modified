@@ -72,9 +72,9 @@ async function addScrapeJobRaw(
   jobPriority: number,
 ) {
   let maxConcurrency = Number(process.env.MAX_CONCURRENT_JOBS) || 2;
-  if (webScraperOptions?.team_id) {
-    await processConcurrencyQueue(webScraperOptions.team_id, maxConcurrency);
-  }
+  // if (webScraperOptions?.team_id) {
+  //   await processConcurrencyQueue(webScraperOptions.team_id, maxConcurrency);
+  // }
   let concurrencyLimited = false;
   let currentActiveConcurrency = 0;
   console.log("[MAX_CONCURRENT_JOBS]", maxConcurrency);
@@ -103,27 +103,27 @@ async function addScrapeJobRaw(
     /**
      * comentamos esto a ver que pasa y vamos a mandarlo directo a bullmq
      */
-    await _addScrapeJobToBullMQ(webScraperOptions, options, jobId, jobPriority);
-    // if(concurrencyQueueJobs > maxConcurrency) {
-    //   logger.info("Concurrency limited 2x (single) - ", "Concurrency queue jobs: ", concurrencyQueueJobs, "Max concurrency: ", maxConcurrency, "Team ID: ", webScraperOptions.team_id);
+    // await _addScrapeJobToBullMQ(webScraperOptions, options, jobId, jobPriority);
+    if(concurrencyQueueJobs > maxConcurrency) {
+      logger.info("Concurrency limited 2x (single) - ", "Concurrency queue jobs: ", concurrencyQueueJobs, "Max concurrency: ", maxConcurrency, "Team ID: ", webScraperOptions.team_id);
       
-    //   // Only send notification if it's not a crawl or batch scrape
-    //     const shouldSendNotification = await shouldSendConcurrencyLimitNotification(webScraperOptions.team_id);
-    //     if (shouldSendNotification) {
-    //       sendNotificationWithCustomDays(webScraperOptions.team_id, NotificationType.CONCURRENCY_LIMIT_REACHED, 15, false).catch((error) => {
-    //         logger.error("Error sending notification (concurrency limit reached): ", error);
-    //       });
-    //     }
-    // }
+      // Only send notification if it's not a crawl or batch scrape
+        const shouldSendNotification = await shouldSendConcurrencyLimitNotification(webScraperOptions.team_id);
+        if (shouldSendNotification) {
+          sendNotificationWithCustomDays(webScraperOptions.team_id, NotificationType.CONCURRENCY_LIMIT_REACHED, 15, false).catch((error) => {
+            logger.error("Error sending notification (concurrency limit reached): ", error);
+          });
+        }
+    }
     
-    // // webScraperOptions.concurrencyLimited = true;
+    // webScraperOptions.concurrencyLimited = true;
 
-    // await _addScrapeJobToConcurrencyQueue(
-    //   webScraperOptions,
-    //   options,
-    //   jobId,
-    //   jobPriority,
-    // );
+    await _addScrapeJobToConcurrencyQueue(
+      webScraperOptions,
+      options,
+      jobId,
+      jobPriority,
+    );
   } else {
     await _addScrapeJobToBullMQ(webScraperOptions, options, jobId, jobPriority);
   }

@@ -2,11 +2,7 @@
   "compilerOptions": {
     "rootDir": "./src",
     "lib": ["ES2022", "DOM"],
-
-
-    // or higher
     "target": "ES2022",
-
     "module": "commonjs",
     "esModuleInterop": true,
     "sourceMap": true,
@@ -16,10 +12,21 @@
     "strictNullChecks": true,
 
     "paths": {
-      "*": ["node_modules/*", "src/types/*"],
+      "@ai-sdk/openai/internal": [
+        "node_modules/.pnpm/@ai-sdk+openai@1.1.13_zod@3.24.2/node_modules/@ai-sdk/openai/internal/dist/index.d.ts"
+      ],
+      "*": ["node_modules/*", "src/types/*"]
     },
 
-    "inlineSources": true,
+    "inlineSources": true
   },
-  "include": ["src/","src/**/*", "services/db/supabase.ts", "utils/utils.ts", "services/db/supabaseEmbeddings.ts", "utils/EventEmmitter.ts", "src/services/queue-service.ts"]
+  "include": [
+    "src/",
+    "src/**/*",
+    "services/db/supabase.ts",
+    "utils/utils.ts",
+    "services/db/supabaseEmbeddings.ts",
+    "utils/EventEmmitter.ts",
+    "src/services/queue-service.ts"
+  ]
 }
